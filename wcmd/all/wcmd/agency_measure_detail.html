@@ -1,0 +1,190 @@
+{% extends "wcmd/_base.html" %}
+
+  {% block content %}
+  {% load humanize %}
+     <h4><a class='text-reset text-decoration-none' href="/wcmd/{{object.agency.slug}}/">{{ object.agency.name }}</a> <span class='{{object.agency.sla}}'>&sect;</span> {{ object.name|title }}</h4>
+    </div>
+    <div class='row'>
+      <div class='col-6 col-xxl-6 col-xl-6 col-lg-6 col-md-8 col-sm-8 words' id=''>
+        {% if object.page_content %}
+        {% endif %}
+        <p class='mb-0'><span class='fw-bolder text-secondary'>{{ object.fullname}}</span> is {% if object.required == 'required'%}a <strong>required measure</strong>{% elif object.required == 'optional' %}an <strong>optional measure</strong>{% elif object.required == 'if relevant'%}<strong>required if relevant</strong>{% elif object.required|slice:"11" == 'one or more' %}<strong>one of a group of measures</strong>{% endif %} under the <span class='fw-bolder text-secondary'>{{ object.indicator }}</span> indicator{% if object.required|slice:"11" == 'one or more' %} -- <strong>one or more</strong> is required{% endif %}. The <span class='fw-bolder text-secondary'>{{ object.indicator }}</span> indicator is under the <span class='fw-bolder text-secondary'>{{ object.question }}</span> monitoring question for <span class='fw-bolder text-secondary'>{{ object.quality }}</span> quality.
+        </p>
+        <div class='my-0' id='g1_1'></div>
+        <p>This measure is reported as a {{ object.get_reported_as_display|lower }}{% if object.units %}, in {{ object.units }}{% endif %}.{% if object.formula %} {{ object.formula }}.{% endif %}
+        </p>
+        <p>The table below shows reported {{ object.name }} trend{{trv_list|length|pluralize}} at each {{ object.agency.sla }} wilderness using this measure. As ever, selected measures have <span class='grey'><strong>filled grey circle</strong></span>, and colors indicate an <span class='green'>upward</span>, <span class='gold'>stable</span>, or <span class='red'>downward</span> reported trend. Unselected measures can also be recorded, and are shown as <span class=''>hollow circles</span> in the appropriate color.
+        </p>
+        </div>
+      <div class='col-6 col-xxl-6 col-xl-6 col-lg-6 col-md-4 col-sm-4 border-start words' id='graph1'>
+        <p class='card p-1 cell border-info'>this is where we group wilderness areas by region and interval, and show some summary statistics for this measure
+        </p>
+      </div>
+    </div>
+    <div class='row'>
+      <div class='col-12'>
+      {% regroup tr_list by wilderness as wtr_list %}
+        <strong>{{ tr_list.count }}</strong> Wilderness Character Trend Report{{ tr_list.count|pluralize }} <span class='text-muted'>with</span> <strong>{{ trv_list.count }}</strong> Recorded Trend{{ trv_list.count|pluralize }} <span class='text-muted'>for</span> <strong>{{wtr_list|length}}</strong> Wilderness Area{{ wtr_list|length|pluralize }}
+
+        <table class="table table-sm words">
+          <thead>
+            <tr>
+              <th>Wilderness Area</th>
+        {% for ty in object.tw %}
+              <th>{{ ty }}</th>
+        {% empty %}
+              <th>No trend reports yet.</th>
+        {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+        {% for w in wtr_list %}
+            <tr>
+              <td><a class='text-decoration-none {% if wm not in measures %}text-muted{% endif %}' href="/wcmd/{{ w.grouper.agency.slug }}/{{ w.grouper.slug }}/">{{ w.grouper }}</a></td>
+        {% for ty in object.tw %}
+              <td>
+        {% for tr in w.list %}
+        {% if tr.year == ty %}
+                <a class='text-decoration-none' href="/wcmd/{{ object.agency.slug }}/{{ w.grouper.slug }}/{{ tr.year }}/measure/{{ object.slug }}/"><div class="circle c_{{ tr.lmat.direction }}{% if tr.lmat.selected %}{% else %}_{% endif %}"><span></span></div></a>
+                <a class='text-decoration-none' href="/wcmd/{{ object.agency.slug }}/{{ w.grouper.slug }}/{{ tr.year }}/measure/{{ object.slug }}/"><span class="ui text-monospace text-uppercase text-{{ tr.lmat.direction }}">{% if tr.lmat.direction == 'I'%}Improving{% elif tr.lmat.direction == 'S'%}Stable{% elif tr.lmat.direction == 'O'%}Offsetting-Stable{% elif tr.lmat.direction == 'D'%}Degrading{% else %}{% endif %}</span></a>
+        {% endif %}
+        {% endfor %}
+              </td>
+        {% empty %}
+              <td>No trend reports yet.</td>
+        {% endfor %}
+            </tr>
+        {% empty %}
+            <tr><td>No trend reports yet.</td></tr>
+        {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+{{ mjson|json_script:"measd" }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.7.0/dist/d3.min.js" charset="utf-8"></script>
+<script>
+function wrap1_1(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 0.5, // ems
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", function(d) { return d.children ? -10 : 10; }).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width)
+      {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", function(d) { return d.children ? -10 : 10; }).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
+function graph1_1() {
+  var margin = {top: 10, right: 0, bottom: 10, left: 0},
+    width = 500 - margin.left - margin.right,
+    height = 90 - margin.top - margin.bottom;
+
+  var treemap = d3.tree()
+    .nodeSize([(height+200)/60, (width+30)/5]); // 700/60
+
+  var measures_json = JSON.parse(document.getElementById('measd').textContent);
+
+  function trx(treeData) {
+
+    var nodes = d3.hierarchy(treeData, function(d) {
+      return d.children;
+      });
+
+    nodes = treemap(nodes);
+    var col = document.getElementById('g1_1')
+
+    var svg = d3.select(col).append("svg")
+        .attr("preserveAspectRatio", "xMinYMin meet")
+        .attr("viewBox", "0 0 " + width + " " + height + "")
+        //.attr("width", width + margin.left + margin.right)
+        //.attr("height", height + margin.top + margin.bottom),
+      g = svg.append("g")
+        .attr("transform",
+          //"translate(" + margin.left + "," + margin.top + ")");
+          "translate(" + -20 + "," + 0 + ")");
+
+    var link = g.selectAll(".link")
+      .data(nodes.descendants().slice(1))
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("class", function(d) {
+           return "link D" + d.parent.depth;
+         })
+      .attr("class", function(d) {
+        if (d.data.required) {
+          return "link D" + d.parent.depth + " link_" + d.data.required.replace(/ /g,"_");
+         }
+        else {
+          return "link D" + d.parent.depth;
+         }
+        })
+      .attr("d", function(d) {
+           return "M" + d.y + "," + (d.x+(d.depth*10))
+           + "C" + (d.y + d.parent.y) / 2 + "," + (d.x+(d.depth*10))
+           + " " + (d.y + d.parent.y) / 2 + "," + (d.parent.x+(d.parent.depth*10))
+           + " " + d.parent.y + "," + (d.parent.x+(d.parent.depth*10));
+         });
+
+    var node = g.selectAll(".node")
+      .data(nodes.descendants())
+      .enter().append("g")
+      .attr("class", function(d) { 
+        return "node" + 
+        (d.children ? " node--internal" : " node--leaf"); })
+      .attr("transform", function(d) { 
+        return "translate(" + d.y + "," + (d.x+(d.depth*10)) + ")"; })
+
+    node.append("circle")
+      .attr("r", 4);
+
+    node.each(function(d) {
+      if (d.data.required) {
+        rc = d.data.required.replace(/ /g,"_");
+        this.classList.add(rc);
+      }
+      if (d.depth === 0) {
+        this.remove();
+      }
+    });
+
+    var x = d3.scaleBand()
+        .range([0, width])
+        .round(.1);
+
+    node.append("text")
+      .attr("dy", ".35em")
+      .attr("x", function(d) { return d.children ? -10 : 10; })
+      .attr("class", function(d) {
+           return "node D" + d.depth;
+         })
+      .style("text-anchor", function(d) { 
+      return d.children ? "end" : "start"; })
+      .text(function(d) { return d.data.name; })
+      .call(wrap1_1, 100)
+      ;
+  };
+  trx(measures_json);
+  }
+graph1_1();
+</script>
+{% endblock %}

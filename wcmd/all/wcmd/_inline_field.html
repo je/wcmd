@@ -1,0 +1,23 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% if field.field.widget.input_type == 'hidden' %}
+    {{ field }}
+{% else %}
+    <div class='flex-col my-1 mx-2'>
+        {% if "DELETE" in field.name  %}
+            {{ field|add_class:"form-control-sm"|attr:"onclick:delClick(this)"|as_crispy_field }}
+        {% elif field.name == "name" %}
+        {% elif field.name == "remarks" %}
+            {{ field|add_class:"form-control-sm"|attr:"rows:2"|as_crispy_field }}
+        {% elif field.name == "page_content" %}
+            {{ field|add_class:"form-control-sm"|attr:"rows:2"|as_crispy_field }}
+        {% elif field.name == "formula" %}
+            {{ field|add_class:"form-control-sm"|attr:"rows:2"|as_crispy_field }}
+        {% elif field.name == "reported_as" %}
+            {{ field|add_class:"form-select-sm"|attr:"rows:2"|as_crispy_field }}
+        {% else %}
+            {{ field|add_class:"form-control-sm"|as_crispy_field }}
+        {% endif %}
+    </div>
+{% endif %}

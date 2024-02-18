@@ -1,0 +1,62 @@
+{% extends "wcmd/_base.html" %}
+
+  {% block content %}
+  {% load humanize %}
+     <h4>Wilderness Character Database</h4>
+    </div>
+    <div class='row'>
+      <div class='col-4 words'>
+        <p>This is the front page of an application for tracking wilderness character trends in NWPS wilderness areas.
+        <ul class="list-unstyled">
+          <li>Things we have:
+            <ul>
+              <li>user accounts</li>
+              <li>measure selection and trends</li>
+              <li>import/export</li>
+              <li>basic aggregation</li>
+              <li>tags/group filters</li>
+              <li>and everything you see here</li>
+            </ul>
+          </li>
+          <br>
+          <li>Things we don't:
+            <ul>
+              <li>custom roles/permissions</li>
+              <li>custom data entry forms</li>
+              <li>values to trend (with protocols)</li>
+              <li>locally developed measures</li>
+              <li>trend data graphics</li>
+            </ul>
+          </li>
+        </ul>
+        </p>
+      </div>
+      <div class='col-4 border-start'>
+        <h5>Wilderness Areas</h5>
+        <p class='words'>Wilderness character is measured differently at each wilderness area and at each agency.</p>
+        {% for a in object_list %}
+          <div class="row words">
+            <div class="col-2 text-end pe-0"><a class='text-decoration-none text-end' href="/wcmd/{{a.slug}}/">{{a.wilderness_count}}</a></div> <div class="col-10 text-start ps-1">at <a class='text-decoration-none' href="/wcmd/{{a.slug}}/">{{ a.name }}</a></div>
+          </div>
+        {% empty %}
+            <div>No agencies yet.</div>
+        {% endfor %}
+      </div>
+      <div class='col-4 border-start'>
+        <h5>Recent Activity</h5>
+        <p class='fw-lighter words'>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/absaroka-beartooth/2025/">USFS Absaroka-Beartooth <span class="USFS">§</span> 2025</a> added.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/absaroka-beartooth/2020/">USFS Absaroka-Beartooth <span class="USFS">§</span> 2020</a> edited.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/absaroka-beartooth/">USFS Absaroka-Beartooth</a> edited.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/anaconda-pintler/2020/">USFS Anaconda-Pintler <span class="USFS">§</span> 2020</a> added.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/anaconda-pintler/">USFS Anaconda-Pintler</a> edited.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/measure/inholdings/">USFS <span class="USFS">§</span> Inholdings</a> measure edited.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/measure/ozone/">USFS <span class="USFS">§</span> Ozone</a> measure edited.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/measure/visitor-restrictions/">USFS <span class="USFS">§</span> Visitor Restrictions</a> measure added.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/usda-forest-service/">US Forest Service</a> edited.</div>
+          <div class='pb-1 words'><a class="text-decoration-none" href="/wcmd/bureau-of-land-management/">Bureau of Land Management</a> added.</div>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

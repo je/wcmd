@@ -1,0 +1,16 @@
+{% extends "wcmd/_base.html" %}
+
+  {% block extra_style %}
+  <style>
+  form .p { font-size: 0.7rem;}
+  form .input { font-size: 0.7rem;}
+  form .button { font-size: 0.7rem;}
+  form .a { font-size: 0.7rem;}
+  form .a.button { font-size: 0.7rem;}
+  </style>
+  {% endblock %}
+
+  {% block top %}
+     <h6 class='d-flex justify-content-between align-items-center'><small><a class='text-muted text-decoration-none' href="/wcmd/">Wilderness Character Database</a></small><span class='ui'>{% if request.user.is_authenticated %}Logged in as <a class='text-decoration-none' href="{% url 'user_landing' %}">{{ request.user }}</a>. <a class='text-decoration-none' href="{% url 'account_logout' %}">Logout?</a>{% else %}<a class='text-decoration-none' href="{% url 'account_login' %}">Login</a> or <a class='text-decoration-none' href="{% url 'account_signup' %}">Sign Up</a>{% endif %}</span></h6>
+  {% endblock %}
+

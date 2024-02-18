@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <title>wcmd</title>
+  <meta charset="UTF-8" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+  <style>
+    :root {
+        font-size: 12px; /* for example */
+    }
+  .blue { color: #4e79a7; }
+  .orange { color: #f28e2c; }
+  .red { color: #e15759; }
+  .cyan { color: #76b7b2; }
+  .green { color: #59a14f; }
+  .gold { color: #edc949; }
+  .purp { color: #af7aa1; }
+  .pink { color: #ff9da7; }
+  .brown { color: #9c755f; }
+  .grey { color: #bab0ab; }
+  .black { color: black; }
+
+  .text-I { color: #59a14f; }
+  .text-S { color: black; }
+  .text-O { color: black; }
+  .text-D { color: #e15759; }
+
+  .NPS { opacity: 0.5; color: #bab0ab; }
+  .USFS { opacity: 0.5; color: forestgreen; }
+  .FWS { opacity: 0.5; color: #76b7b2; }
+  .BLM { opacity: 0.5; color: #9c755f; }
+
+  .circle {
+    display: inline-block;
+    border-radius: 50%;
+    min-width: 6px;
+    min-height: 6px;
+    padding: auto;
+    color: white;
+    text-align: center;
+    line-height: 0.4rem;
+    box-sizing: content-box;
+    white-space: nowrap;
+  }
+
+  .circle:before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    padding-top: 100%;
+    height: 0;
+  }
+  .circle span {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .c_ { background: #bab0ab; border:2px solid #bab0ab; }
+  .c_I { background: #59a14f; border:2px solid #59a14f; }
+  .c_S { background: #edc949; border:2px solid #edc949; }
+  .c_O { background: #edc949; border:2px solid #edc949; }
+  .c_D { background: #e15759; border:2px solid #e15759; }
+
+  .c__ { background: none; border:2px solid #bab0ab; }
+  .c_I_ { background: none; border:2px solid #59a14f; }
+  .c_S_ { background: none; border:2px solid #edc949; }
+  .c_O_ { background: none; border:2px solid #edc949; }
+  .c_D_ { background: none; border:2px solid #e15759; }
+
+  .cell { font-size: 0.6rem !important;}
+  .ui { font-size: 0.7rem !important;}
+  .words { font-size: 0.8rem !important;}
+  div.alert { flex-shrink: 1;}
+  </style>
+
+  {% block extra_style %}
+  <style>
+  .node circle {
+    fill: #fff;
+    fill-opacity: 1.0;
+    stroke: black;
+    stroke-opacity: 0.7;
+    stroke-width: 2px;
+  }
+  .two_or_more circle {
+    stroke: black;
+  }
+  .one_or_more circle {
+    stroke: black;
+  }
+  .required circle {
+    fill: black;
+    stroke: black;
+  }
+  .if_relevant circle {
+    fill: #bab0ab;
+    stroke: #bab0ab;
+  }
+  .optional circle {
+    stroke: #bab0ab;
+  }
+  .node .s_yes {
+    fill: #bab0ab;
+    stroke: #bab0ab;
+  }
+  .node .s_ {
+    fill: white;
+    stroke: #bab0ab;
+  }
+  .node .t_1 {
+    fill: #59a14f;
+    stroke: #59a14f;
+  }
+  .node .t_0 {
+    fill: #edc949;
+    stroke: #edc949;
+  }
+  .node .t_-1 {
+    fill: #e15759;
+    stroke: #e15759;
+  }
+  .link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+  }
+  .link_two_or_more {
+    stroke-dasharray: 5;
+  }
+  .link_one_or_more {
+    stroke-dasharray: 5;
+  }
+  .link_required {
+  }
+  .link_if_relevant {
+    stroke-dasharray: 5;
+  }
+  .link_optional {
+    stroke-dasharray: 5;
+  }
+  .node text { font: 7px sans-serif; }
+  .node--internal text {
+    text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+  }
+  .D0 {
+    fill-opacity: 0.0;
+    stroke-opacity: 0.0;
+  }
+  a.ad {
+     pointer-events: none;
+  }
+  .vis-hidden {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+  input:checked + label {
+    border: 2px solid black !important;
+  }
+  tr.out { display: none; }
+  </style>
+  {% endblock %}
+</head>
+
+<body>
+    {% block body %}
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="success" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+  </symbol>
+  <symbol id="info" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+  </symbol>
+  <symbol id="warning" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </symbol>
+  <symbol id="error" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </symbol>
+</svg>
+  <div class='container'>
+    <div class='row mt-3'>
+  {% block top %}
+     <h6 class='d-flex justify-content-between align-items-center'><small><a class='text-muted text-decoration-none' href="/wcmd/">National Wilderness Preservation System</a></small><span class='ui'>{% if request.user.is_authenticated %}Logged in as <a class='text-decoration-none' href="{% url 'user_landing' %}">{{ request.user }}</a>. <a class='text-decoration-none' href="{% url 'account_logout' %}">Logout?</a>{% else %}<a class='text-decoration-none' href="{% url 'account_login' %}">Login</a> or <a class='text-decoration-none' href="{% url 'account_signup' %}">Sign Up</a>{% endif %}</span></h6>
+  {% endblock %}
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}  d-flex align-items-center alert-dismissible w-100 fade show mx-2 p-1 ui" role="alert">
+  {% if message.tags %}<svg class="bi flex-shrink-0 me-2" width="12" height="12" role="img" aria-label="{{ message.tags }}"><use xlink:href="#{{ message.tags }}"/></svg>{% endif %} {{message}}
+        <button type="button" class="btn-close mx-auto pt-2 py-1 ui" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% block content %}
+  {% endblock %}
+  {% endblock %}
+  {% block extra_body %}
+  {% endblock %}
+  </body>
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+<script>
+</script>
+{% endblock %}
+</html>

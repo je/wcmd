@@ -1,0 +1,53 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div id='better_inline_{{ inline_name }}' class="card w-full bg-base-100 shadow-xl card-bordered card-compact border border-gray-900">
+    <div class="card-body">
+        <h3 class="card-title">
+            {{ inline_title }}
+        </h3>
+        {% if formset.non_form_errors %}
+            <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+        {% endif %}
+
+        <div class="accordion" id="accordionMeasures">
+
+        <template id="empty-form-{{ inline_name }}">
+              <div class="accordion-item flex border rounded p-1 m-1 inline-form">
+                <h6 class="accordion-header" id="heading-">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-" aria-expanded="true" aria-controls="collapse-">
+                    {% for fform in formset %}{{fform.name|add_class:"form-control-sm"|as_crispy_field}}{% endfor %}
+                  </button>
+                </h6>
+                <div class="accordion-collapse collapse" id="collapse-" data-bs-parent="#accordionMeasures" aria-labelledby="heading-">
+                  <div class="accordion-body">
+                    {% for field in formset.empty_form %}
+                    {% include "wcmd/_inline_field.html" %}
+                {% endfor %}
+                  </div>
+                </div>
+              </div>
+        </template>
+
+        {{ formset.management_form }}
+
+        {% for fform in formset %}
+              <div class="accordion-item flex border rounded p-1 m-1 inline-form">
+                <h6 class="accordion-header" id="heading{{ forloop.counter }}">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                    Measure {{ forloop.counter }}: {{fform.name|add_class:"form-control-sm"|as_crispy_field}}
+                  </button>
+                </h6>
+                <div class="accordion-collapse collapse" id="collapse{{ forloop.counter }}" data-bs-parent="#accordionMeasures" aria-labelledby="heading{{ forloop.counter }}">
+                  <div class="accordion-body">
+                    {% for field in fform %}
+                    {% include "wcmd/_inline_field.html" %}
+                {% endfor %}
+                  </div>
+                </div>
+              </div>
+        {% empty %}
+            <div class='flex p-1 m-1 inline-form'></div>
+        {% endfor %}
+        </div>
+    </div> <!-- card body -->
+</div><!-- card -->

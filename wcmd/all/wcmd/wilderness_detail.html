@@ -1,0 +1,149 @@
+{% extends "wcmd/_base.html" %}
+
+  {% block content %}
+  {% load humanize %}
+     <h4><a class='text-muted text-decoration-none' href="/wcmd/{{object.agency.slug}}/">{{ object.agency.sla }}</a> {{ object.name }}</h4>
+    </div>
+    <div class='row'>
+      <div class='col-6 col-xxl-8 col-xl-8 col-lg-8 col-md-6 col-sm-6 words'>
+        <p>This {% if object.acreage <= 100 %}tiny{% elif object.acreage <= 1000 %}smallish{% elif object.acreage <= 10000 %}mid-sized{% elif object.acreage <= 100000 %}expansive{% elif object.acreage <= 1000000 %}gigantic{% elif object.acreage > 1000000 %}super-huge{% endif %} {{ object.acreage|floatformat:"0g" }} acre wilderness was designated {% if object.designation_date.year <= 1970 %}way, way back{% elif object.designation_date.year <= 1990 %}way back{% elif object.designation_date.year <= 2010 %}back{% elif object.designation_date.year <= 2020 %}{% endif %} on {{ object.designation_date }}, {% if object.designation_date.year <= 1970 %}a mind-bending{% elif object.designation_date.year <= 1980 %}a staggering{% elif object.designation_date.year <= 2000 %}a respectable{% elif object.designation_date.year <= 2010 %}a scant{% else %}just{% endif %} {{ object.designation_date|timesince }} ago.
+        </p>
+        {% if object.tags %}<p>Tagged as: {% for tag in object.tags.all %}<span class="badge border border-secondary bg-light text-dark">{{ tag }}</span> {% endfor %}
+        </p>{% endif %}
+        <p>The table below summarizes {{ tr_list.count|apnumber }} trend reports, showing overall trend{{ tr_list.count|pluralize }} and each of the {{w_m_list|length}} reported measure trend{{w_m_list|length|pluralize}} for this wilderness. As ever, selected measures have <span class='grey'><strong>filled grey circle</strong></span>, and colors indicate an <span class='green'>upward</span>, <span class='gold'>stable</span>, or <span class='red'>downward</span> reported trend. Unselected measures can also be recorded, and are shown as <span class=''>hollow circles</span> in the appropriate color.
+        </p>
+      </div>
+      <div class='col-6 col-xxl-4 col-xl-4 col-lg-4 col-md-6 col-sm-6 border-start words' id='graph1'>
+      </div>
+    </div>
+    <div class='row'>
+      <div class='col-12'>
+        <strong>{{ tr_list.count }}</strong> Wilderness Character Trend Report{{ tr_list.count|pluralize }} <span class='text-muted'>with</span> <strong>{{ object.wltrm }}</strong> Recorded Trend{{ object.wltrm|pluralize }} <span class='text-muted'>for</span> <strong>{{w_m_list|length}}</strong> Measure{{w_m_list|length|pluralize}}
+
+        <table class="table table-sm table-hover words">
+          <thead>
+            <tr>
+              <th>Measure</th>
+        {% for tr in tr_list %}
+              <th><a class='text-decoration-none' href="/wcmd/{{ object.agency.slug }}/{{ object.slug }}/{{ tr.year }}/"><div class="circle c_{% if tr.nextstep is None %}{{ tr.direction }}{% else %}{% endif %}"><span></span></div></a> <a class='text-decoration-none' href="/wcmd/{{object.agency.slug}}/{{object.slug}}/{{tr.year}}/">{{tr.year}}</a>
+              <br>
+              <a class='text-reset text-decoration-none' href="/wcmd/{{object.agency.slug}}/{{object.slug}}/{{tr.year}}/">{{tr.name}}</a></th>
+        {% empty %}
+            <th>No trend reports yet.</th>
+        {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+        {% for wm in w_m_list %}
+            <tr>
+              <td><a class='text-decoration-none {% if wm.slug not in measures %}text-muted{% endif %}' href="/wcmd/{{object.agency.slug}}/{{object.slug}}/measure/{{ wm.slug }}/">{{ wm.name }}</a></td>
+        {% for tr in tr_list %}
+              <td>
+          {% for m in tr.lmat %}
+          {% if m.slug == wm.slug %}
+                <a class='text-decoration-none' href="/wcmd/{{ object.agency.slug }}/{{ object.slug }}/{{ tr.year }}/measure/{{ m.slug }}/"><div class="circle c_{{ m.direction }}{% if m.selected %}{% else %}_{% endif %}"><span></span></div></a>
+                <a class='text-decoration-none' href="/wcmd/{{ object.agency.slug }}/{{ object.slug }}/{{ tr.year }}/measure/{{ m.slug }}/"><span class="ui text-monospace text-uppercase text-{{ m.direction }}">{% if m.direction == 'I'%}Improving{% elif m.direction == 'S'%}Stable{% elif m.direction == 'O'%}Offsetting-Stable{% elif m.direction == 'D'%}Degrading{% else %}{% endif %}</span></a>
+          {% endif %}
+          {% endfor %}
+              </td>
+        {% empty %}
+              <td>No trend reports yet.</td>
+        {% endfor %}
+            </tr>
+        {% empty %}
+            <tr><td>No measures yet.</td></tr>
+        {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.7.0/dist/d3.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.1"></script>
+<script>
+function wrap1_2(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 0.5, // ems
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", function(d) { return d.children ? 10 : -10; }).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width)
+      {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", function(d) { return d.children ? 10 : -10; }).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
+function graph1() {
+  var margin = {top: 20, right: 20, bottom: 20, left: 20},
+    width = 500 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var projection = d3.geoAlbers();
+
+  var path = d3.geoPath()
+      .projection(projection);
+
+  var w_json = {{ object.geom.geojson|safe }};
+  console.log(w_json)
+
+  projection
+      .scale(1)
+      .translate([0, 0]);
+
+  var bb = path.bounds(w_json);
+  var bbh = Math.abs(bb[1][1] - bb[0][1]);
+  var bbw = Math.abs(bb[1][0] - bb[0][0]);
+  if (bbh > bbw) {
+    var height = 300;
+    var width = height*(bbw / bbh);
+  }
+  else {
+    var width = 975;
+    var height = width*(bbh / bbw);
+  }
+
+  var s_ = .95 / Math.max((bb[1][0] - bb[0][0]) / width, (bb[1][1] - bb[0][1]) / height),
+    t_ = [(width - s_ * (bb[1][0] + bb[0][0])) / 2, (height - s_ * (bb[1][1] + bb[0][1])) / 2];
+
+  projection
+      .scale(s_)
+      .translate(t_);
+
+  //projection2 = geoAlbersUsaPr().scale(1250).translate([487.5, 305])
+  //nation = topojson.feature(us, us.objects.nation)
+  //statemesh = topojson.mesh(us, us.objects.states, (a, b) => a !== b)
+
+  var options = {
+        width: width,
+        height: height,
+        projection: projection,
+        marks: [
+          //Plot.frame(),
+          //Plot.geo(nation, {fill: "#ddd"}),
+          //Plot.geo(statemesh, { fill: "none", stroke: "white", strokeLinejoin: "round", clip: "frame", strokeOpacity: 1 }),
+          Plot.geo(w_json, {fill: {% if object.agency.sla == 'NPS' %}"#bab0ab"{% else %}"grey"{% endif%}, stroke: "black", fillOpacity: 0.5}),
+        ]
+  };
+  document.getElementById('graph1').innerHTML = Plot.plot(options).outerHTML;
+
+};
+graph1();
+</script>
+{% endblock %}

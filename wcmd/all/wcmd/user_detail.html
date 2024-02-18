@@ -1,0 +1,34 @@
+{% extends "account/base.html" %}
+
+  {% block content %}
+  {% load humanize %}
+     <h4>User {% if user.first_name %}{{ user.first_name }} {% endif %}{% if user.last_name %}{{ user.last_name }} {% endif %}'{{ user.username }}'</h4>
+    </div>
+    <div class='row'>
+      <div class='col-4' id=''>
+            <div class='pb-1 words'><a class='text-decoration-none' href="{% url 'account_change_password' %}">Change password</a></div>
+            <div class='pb-1 words'><a class='text-decoration-none' href="{% url 'account_email' %}">Change email address</a></div>
+      </div>
+      <div class='col-4 border-start'>
+        <h5>{{ w_list.count }} Wilderness Area{{ w_list.count|pluralize }}</h5>
+        <div class="row words">
+        {% for w in w_list %}
+            <div class='pb-1'><a class='text-decoration-none' href="/wcmd/{{object.slug}}/{{w.slug}}/">{{ w.name }}</a></div>
+        {% empty %}
+            <div class='pb-1text-muted'>No wilderness areas yet. Find a wilderness area and request permissions.</div>
+        {% endfor %}
+        </div>
+      </div>
+      <div class='col-4 border-start'>
+        <h5>Recent Activity</h5>
+        <div class="row words">
+        {% for a in a_list %}
+            <div class='pb-1'><a class='text-decoration-none' href="/wcmd/{{object.slug}}/{{w.slug}}/">{{ w.name }}</a></div>
+        {% empty %}
+            <div class='pb-1 text-muted'>No activity yet. Find a wilderness area and contribute something.</div>
+        {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

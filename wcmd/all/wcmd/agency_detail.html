@@ -1,0 +1,285 @@
+{% extends "wcmd/_base.html" %}
+
+  {% block content %}
+  {% load humanize %}
+      <div class="align-items-center d-flex justify-content-between" id="headingOne">
+       <h4>{{ object.name }}
+       </h4>
+      </div>
+    </div>
+    <div class="tab-content">
+      <div class='tab-pane fade active show' id="measures" role="tabpanel" aria-labelledby="measures-tab">
+        <div class='row'>
+          <div class='col-8' id='g1_1'>
+          </div>
+          <div class='col-4 border-start words'>
+            <p>The first graph here shows the qualities, questions, indicators, and measures used in wilderness character monitoring at the {{ object.name }}. Qualities of wilderness character on the left are paired with one or more monitoring questions, which in turn are answered by one or more indicators, each with one or more trendable measures.
+            </p>
+            <p>Measures represented by a <span class='black'><strong>filled black circle</strong></span> are required for all wilderness areas. When an indicator has a group of measures represented by <span class='black'><strong>hollow black circles</strong></span>, one or more of these measures is required. Measures represented by a <span class='grey'><strong>hollow grey circle</strong></span> are optional.{% if object.agency.tla == 'USFS' %} Lastly, measures represented by a <span class='grey'><strong>filled grey circle</strong></span> (down at the bottom) are required where relevant.{% endif %}
+            </p>
+            <p>In addition to th{{ m_list.count|pluralize:'is,ese' }} {{ m_list.count }} standard measure{{ m_list.count|pluralize }}, a wilderness area may use a custom measure to capture trends based on other available data. In most cases we don't use every possible measure to represent an indicator.
+            </p>
+            <p><nav class="nav_" id="myTab" role="tablist">Once an agency has established measures, we can create <a class="text-decoration-none tab-link" id="reports-b" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">trend reports</a> for each wilderness area and start recording trends.</nav></p>
+          </div>
+        </div>
+      </div>
+      <div class='tab-pane fade' id="reports" role="tabpanel" aria-labelledby="reports-tab">
+        <div class='row'>
+          <div class='col-8'>
+            <strong id='rc_'>{{ tr_count }}</strong> Wilderness Character Trend Report{{ tr_count|pluralize }} <span class='text-muted'>at</span> <strong id='wc_'>{{ w_list.count }}</strong> Wilderness Area{{ w_list.count|pluralize }}
+
+            <table id="wa" class="table table-sm table-hover words">
+              <thead>
+                <tr>
+                  <th><input onkeyup="filterTable()" placeholder="Wilderness"></th>
+                  <th></th>
+            {% for y in tw %}
+                  <th>{{y}}</th>
+            {% empty %}
+                <th>No trend reports yet.</th>
+            {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+            {% for w in w_list %}
+                <tr>
+                  <td><a class='text-decoration-none' href="/wcmd/{{w.agency.slug}}/{{w.slug}}/">{{ w.name }}</a></td>
+                  <td>{% for tag in w.tags.all %}<span class="badge border border-secondary bg-light text-dark">{{ tag }}</span> {% endfor %}</td>
+            {% for y in tw %}
+                  <td>
+            {% for tr in w.trendreport_wilderness.all %}
+              {% if tr.year == y %}
+                    <a class='text-decoration-none' href="/wcmd/{{ object.slug }}/{{ tr.wilderness.slug }}/{{ tr.year }}/"><div class="circle c_{% if tr.nextstep is None %}{{ tr.direction }}{% endif %}"><span></span></div></a>
+                    <span class="ui text-monospace text-uppercase text-muted">{% if tr.nextstep is None %}{% else %}<a class='text-decoration-none text-muted text-wrap cell' href="/wcmd/{{ object.slug }}/{{ tr.wilderness.slug }}/{{ tr.year }}/">{{ tr.get_nextstep_display }}</a>{% endif %}</span>
+              {% else %}
+              {% endif %}
+            {% empty %}
+            {% endfor %}
+                  </td>
+            {% endfor %}
+                </tr>
+            {% empty %}
+                <tr><td>No trend reports yet.</td></tr>
+            {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class='col-4 border-start words' id=''>
+            <p><nav class="nav_" id="myTab" role="tablist">Once an agency has established <a class="text-decoration-none tab-link" id="measures-b" data-bs-toggle="tab" data-bs-target="#measures" type="button" role="tab" aria-controls="measures" aria-selected="false">measures</a>, we can select measures for each wilderness area and start recording trends.</nav></p>
+            <p>This table lists all of the wilderness character reports for each wilderness area at this agency. Completed reports are shown as a filled circle, shaded to indicate an <span class='green'>upward</span>, <span class='gold'>stable</span>, or <span class='red'>downward</span> overall trend for all qualities. Incomplete reports are shown as <span class='grey'><strong>hollow grey circles</strong></span>, and are labeled with the next milestone in their progress.
+            </p>
+            <p class='card p-1 cell border-info'>this is where we filter the wilderness table by tag (or next milestone, or overall trend) and show some summary statistics
+            </p>
+            <p id='tags'>{% for tag in tag_list %}<input class="vis-hidden" type="checkbox" value="{{ tag }}" id="filter-{{tag}}" /><label class="badge border border-secondary bg-light text-dark" for="filter-{{ tag }}">{{ tag }}</label> {% endfor %}
+            </p>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+{{ mjson|json_script:"measd" }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.7.0/dist/d3.min.js" charset="utf-8"></script>
+<script>
+function wrap1_1(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 0.5, // ems
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", function(d) { return d.children ? -10 : 10; }).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width)
+      {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", function(d) { return d.children ? -10 : 10; }).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
+function graph1_1() {
+  var margin = {top: 20, right: 20, bottom: 20, left: 20},
+    width = 500 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var treemap = d3.tree()
+    .nodeSize([(height+200)/60, (width+30)/5]); // 700/60
+
+  var measures_json = JSON.parse(document.getElementById('measd').textContent);
+
+  function trx(treeData) {
+
+    var nodes = d3.hierarchy(treeData, function(d) {
+      return d.children;
+      });
+    nodes = treemap(nodes);
+    indicators = Array.from(nodes).filter(d => d.depth == 3)
+    indicators.forEach(e => e.l = e.children.length);
+    const mc = indicators.reduce((acc, o) => acc + parseInt(o.l), 0)
+    const ic = indicators.length
+    const ics = indicators.map(function(obj) {
+        return {  indicator: obj.data.name, measures: obj.l };
+      });
+    console.log(ics)
+    console.log(mc)
+    console.log(ic)
+    var hf = ((mc + ic) * ((height+200)/60))/2
+    console.log(hf)
+
+    margin.top = Math.ceil(hf / 5) * 5;
+    console.log(margin.top)
+    margin.left = margin.left - 30
+
+    var col = document.getElementById('g1_1')
+
+    var svg = d3.select(col).append("svg")
+        .attr("preserveAspectRatio", "xMinYMin meet")
+        .attr("viewBox", "0 0 500 500")
+
+    g = svg.append("g")
+      .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+    var link = g.selectAll(".link")
+      .data(nodes.descendants().slice(1))
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("class", function(d) {
+           return "link D" + d.parent.depth;
+         })
+      .attr("class", function(d) {
+        if (d.data.required) {
+          return "link D" + d.parent.depth + " link_" + d.data.required.replace(/ /g,"_");
+         }
+        else {
+          return "link D" + d.parent.depth;
+         }
+        })
+      .attr("d", function(d) {
+           return "M" + d.y + "," + d.x
+           + "C" + (d.y + d.parent.y) / 2 + "," + d.x
+           + " " + (d.y + d.parent.y) / 2 + "," + d.parent.x
+           + " " + d.parent.y + "," + d.parent.x;
+         });
+
+    // adds each node as a group
+    var node = g.selectAll(".node")
+      .data(nodes.descendants())
+      .enter().append("g")
+      .append("a")
+      .attr("href", function(d) { 
+        if (d.children) {
+         return '';
+         }
+        else {
+          return '/wcmd/{{object.slug}}/measure/' + d.data.slug +'/';
+         }
+       }
+      )
+      .attr("class", function(d) { 
+        return "node" + 
+        (d.children ? " text-decoration-none node--internal ad" : " text-decoration-none node--leaf"); })
+      .attr("transform", function(d) { 
+        return "translate(" + d.y + "," + d.x + ")"; })
+
+    node.append("circle")
+      .attr("r", 4);
+
+    node.each(function(d) {
+      if (d.data.required) {
+        rc = d.data.required.replace(/ /g,"_");
+        this.classList.add(rc);
+      }
+      if (d.depth === 0) {
+        this.remove();
+      }
+    });
+
+    var x = d3.scaleBand()
+        .range([0, width])
+        .round(.1);
+
+    node.append("text")
+      .attr("dy", ".35em")
+      .attr("x", function(d) { return d.children ? -10 : 10; })
+      .attr("class", function(d) {
+           return "node D" + d.depth;
+         })
+      .style("text-anchor", function(d) { 
+      return d.children ? "end" : "start"; })
+      .text(function(d) { return d.data.name; })
+      .call(wrap1_1, 100)
+      ;
+  };
+  trx(measures_json);
+  }
+graph1_1();
+</script>
+<script>
+  function filterTable() {
+    const query = q => document.querySelectorAll(q);
+    const ft = [...query('#tags input[type=checkbox]:checked')].map(e => '\\b' + e.value + '\\b');
+    var ref = new RegExp(ft.join("|"));
+    query('#wa tbody tr').forEach(row => row.style.display = 
+      ref.test(row.cells[1].textContent) ? '' : 'none');
+    const fn = [...query('th input')].map(e => new RegExp(e.value, 'i'));
+    query('#wa tbody tr').forEach(row => row.style.display = 
+      fn.every((f, i) => (ref.test(row.cells[1].textContent) && f.test(row.cells[i].textContent))) ? '' : 'none');
+    var wc = document.querySelectorAll('#wa tbody tr').length - document.querySelectorAll('#wa tbody tr:not([style=""])').length;
+    var rc = document.querySelectorAll('#wa tbody tr div').length - document.querySelectorAll('#wa tbody tr:not([style=""]) div').length;
+    document.getElementById('rc_').innerHTML = rc;
+    document.getElementById('wc_').innerHTML = wc;
+  }
+</script>
+<script>
+  document.querySelectorAll('#tags input[type=checkbox]').forEach(el => {
+    el.addEventListener('click',function (e) {
+      const query = q => document.querySelectorAll(q);
+      const ft = [...query('#tags input[type=checkbox]:checked')].map(e => '\\b' + e.value + '\\b');
+      var ref = new RegExp(ft.join("|"));
+      query('#wa tbody tr').forEach(row => row.style.display = 
+        ref.test(row.cells[1].textContent) ? '' : 'none');
+      const fn = [...query('th input')].map(e => new RegExp(e.value, 'i'));
+      query('#wa tbody tr').forEach(row => row.style.display = 
+        fn.every((f, i) => (ref.test(row.cells[1].textContent) && f.test(row.cells[i].textContent))) ? '' : 'none');
+      var wc = document.querySelectorAll('#wa tbody tr').length - document.querySelectorAll('#wa tbody tr:not([style=""])').length;
+      var rc = document.querySelectorAll('#wa tbody tr div').length - document.querySelectorAll('#wa tbody tr:not([style=""]) div').length;
+      document.getElementById('rc_').innerHTML = rc;
+      document.getElementById('wc_').innerHTML = wc;
+      });
+  });
+</script>
+<script>
+var mt = document.getElementById("measures-b");
+mt.addEventListener("click", function(){
+  //var triggerEl = document.querySelector('measures-b')
+  //var tab = bootstrap.Tab.getInstance(triggerEl)
+  //tab.show()
+  document.getElementById("reports").setAttribute( "class", "tab-pane fade" );
+  document.getElementById("measures").setAttribute( "class", "tab-pane fade active show" );
+  document.getElementById("reports-b").setAttribute( "class", "text-decoration-none tab-link active" );
+  document.getElementById("measures-b").setAttribute( "class", "text-decoration-none tab-link" );
+
+});
+var rt = document.getElementById("reports-b");
+rt.addEventListener("click", function(){
+  document.getElementById("measures").setAttribute( "class", "tab-pane fade" );
+  document.getElementById("reports").setAttribute( "class", "tab-pane fade active show" );
+  document.getElementById("measures-b").setAttribute( "class", "text-decoration-none tab-link active" );
+  document.getElementById("reports-b").setAttribute( "class", "text-decoration-none tab-link" );
+});
+</script>
+{% endblock %}
+
